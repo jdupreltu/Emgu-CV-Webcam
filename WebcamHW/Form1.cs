@@ -50,6 +50,39 @@ namespace WebcamHW
                 CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
                 CvInvoke.Threshold(frame, frame, 150, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
                 binaryPictureBox.Image = frame.ToBitmap();
+
+                // Count pixels
+                int whitepixels1 = 0;
+                int whitepixels2 = 0;
+                int whitepixels3 = 0;
+                int whitepixels4 = 0;
+                int whitepixels5 = 0;
+                Image<Gray, byte> img = frame.ToImage<Gray, byte>();
+                for (int i = 1; i <= 5; i++)
+                {
+                    for (int x = frame.Width/5*(i-1); x < frame.Width / 5 * i; x++)
+                    {
+                        for (int y = 0; y < frame.Height; y++)
+                        {
+                            if (img.Data[y, x, 0] == 255)
+                            {
+                                if (i == 1) whitepixels1++;
+                                if (i == 2) whitepixels2++;
+                                if (i == 3) whitepixels3++;
+                                if (i == 4) whitepixels4++;
+                                if (i == 5) whitepixels5++;
+                            }
+                        }
+                    }
+                }
+                Invoke(new Action(() =>
+                {
+                    label1.Text = $"{whitepixels1}";
+                    label2.Text = $"{whitepixels2}";
+                    label3.Text = $"{whitepixels3}";
+                    label4.Text = $"{whitepixels4}";
+                    label5.Text = $"{whitepixels5}";
+                }));
             }
         }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
