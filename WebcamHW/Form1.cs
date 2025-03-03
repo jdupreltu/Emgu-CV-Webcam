@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using Emgu.CV.Structure;
 using System.Collections.Specialized;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
 
 namespace WebcamHW
 {
@@ -46,11 +47,45 @@ namespace WebcamHW
                 // display the image in the PictureBox
                 emguPictureBox.Image = frame.ToBitmap();
 
-                /* Your code for grayscaling and binary threshold-ing the image should go here */
-                CvInvoke.CvtColor(frame, frame, ColorConversion.Bgr2Gray);
-                CvInvoke.Threshold(frame, frame, 150, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
-                binaryPictureBox.Image = frame.ToBitmap();
+                // filter out non white pixels and display it
+                Mat binaryFrame = new Mat();
+                CvInvoke.CvtColor(frame, binaryFrame, Emgu.CV.CvEnum.ColorConversion.Bgr2Gray);
+                Mat thresholdedImage = new Mat();
+                CvInvoke.Threshold(binaryFrame, thresholdedImage, 200, 255, Emgu.CV.CvEnum.ThresholdType.Binary);
+                binaryPictureBox.Image = thresholdedImage.ToBitmap();
 
+                // create hsv
+                Mat hsvFrame = new Mat();
+                CvInvoke.CvtColor(frame, hsvFrame, Emgu.CV.CvEnum.ColorConversion.Bgr2Hsv);
+
+                // split hsv into hue, saturation, and value channels
+                Mat[] hsvChannels = hsvFrame.Split();
+
+                // min and max values for hue, saturation, and value of red
+                int hMin = 0;
+                int hMax = 5;
+                int sMin = 70;
+                int sMax = 255;
+                int vMin = 50;
+                int vMax = 255;
+
+                // create filters for each
+                Mat hueFilter = new Mat();
+                CvInvoke.InRange(hsvChannels[0], new ScalarArray(hMin), new ScalarArray(hMax), hueFilter);
+
+                Mat saturationFilter = new Mat();
+                CvInvoke.InRange(hsvChannels[1], new ScalarArray(sMin), new ScalarArray(sMax), saturationFilter);
+
+                Mat valueFilter = new Mat();
+                CvInvoke.InRange(hsvChannels[2], new ScalarArray(vMin), new ScalarArray(vMax), valueFilter);
+
+                // merge into one image and display
+                Mat mergedImage = new Mat();
+                CvInvoke.BitwiseAnd(hueFilter, saturationFilter, mergedImage);
+                CvInvoke.BitwiseAnd(mergedImage, valueFilter, mergedImage);
+                Invoke(new Action(() => { HSVPictureBox.Image = mergedImage.ToBitmap(); }));
+
+                /*
                 // Count pixels
                 int whitepixels1 = 0;
                 int whitepixels2 = 0;
@@ -60,7 +95,7 @@ namespace WebcamHW
                 Image<Gray, byte> img = frame.ToImage<Gray, byte>();
                 for (int i = 1; i <= 5; i++)
                 {
-                    for (int x = frame.Width/5*(i-1); x < frame.Width / 5 * i; x++)
+                    for (int x = frame.Width / 5 * (i - 1); x < frame.Width / 5 * i; x++)
                     {
                         for (int y = 0; y < frame.Height; y++)
                         {
@@ -83,6 +118,7 @@ namespace WebcamHW
                     label4.Text = $"{whitepixels4}";
                     label5.Text = $"{whitepixels5}";
                 }));
+                */
             }
         }
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
